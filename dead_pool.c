@@ -68,7 +68,7 @@ init_pool(int pool_size, struct in_addr deadrange_base,
     /* Allocate space for the dead_pool structure */
     newpool = (dead_pool *) mmap(0, sizeof(dead_pool), 
                    PROT_READ | PROT_WRITE, 
-                   MAP_SHARED | MAP_ANONYMOUS, -1, 0); 
+                   MAP_SHARED | MAP_ANON, -1, 0); 
     if(!newpool) {
         show_msg(MSGERR, "init_pool: unable to mmap deadpool "
                  "(tried to map %d bytes)\n", sizeof(dead_pool));
@@ -93,7 +93,7 @@ init_pool(int pool_size, struct in_addr deadrange_base,
     /* Allocate space for the entries */
     newpool->entries = (pool_ent *) mmap(0, newpool->n_entries * sizeof(pool_ent), 
                             PROT_READ | PROT_WRITE, 
-                            MAP_SHARED | MAP_ANONYMOUS, -1, 0); 
+                            MAP_SHARED | MAP_ANON, -1, 0); 
     if(!newpool->entries) {
         munmap((void *)newpool, sizeof(dead_pool));
         show_msg(MSGERR, "init_pool: unable to mmap deadpool entries "
