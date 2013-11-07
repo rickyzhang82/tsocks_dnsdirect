@@ -1,0 +1,12 @@
+tsocks.config
+tsocks.creator
+tsocks.creator.user
+tsocks.files
+tsocks.includes
+Makefile
+autom4te.cache/
+config.h
+config.log
+tsocks.in
+configure
+config.status
