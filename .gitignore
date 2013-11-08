@@ -7,9 +7,6 @@ Makefile
 autom4te.cache/
 config.h
 config.log
-tsocks.in
-configure
-config.status
 *.o
 *.dsyM/
 inspectsocks
