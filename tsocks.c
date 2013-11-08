@@ -188,6 +188,8 @@ static int get_environment() {
       loglevel = atoi(env);
    if (((env = getenv("TSOCKS_DEBUG_FILE"))) && !suid)
       logfile = env;
+   //loglevel = MSGDEBUG;
+   //slogfile = "/Users/Ricky/Documents/tsocks.log";
    set_log_options(loglevel, logfile, 1);
 #endif
 
@@ -1098,8 +1100,10 @@ static int send_socksv5_connect(struct connreq *conn) {
 #ifdef USE_TOR_DNS
    show_msg(MSGDEBUG, "send_socksv5_connect: looking for: %s\n",
             inet_ntoa(conn->connaddr.sin_addr));
-
-   name = get_pool_entry(pool, &(conn->connaddr.sin_addr));
+   if(pool->dns_direct_enable)
+       name = NULL;
+   else
+        name = get_pool_entry(pool, &(conn->connaddr.sin_addr));
    if(name != NULL) {
        namelen = strlen(name);
        if(namelen > 255) {  /* "Can't happen" */
@@ -1371,7 +1375,8 @@ static int deadpool_init()
               config->tordns_deadpool_range->localip, 
               config->tordns_deadpool_range->localnet, 
               config->defaultserver.address,
-              config->defaultserver.port
+              config->defaultserver.port,
+              config->dns_direct_enable
           );
           if(!pool) {
               show_msg(MSGERR, "failed to initialize deadpool: tordns disabled\n");

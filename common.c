@@ -98,12 +98,21 @@ int count_netmask_bits(uint32_t mask)
     }
     return nbits;
 }
+#if 0
+void show_msg(int level, char *fmt, ...){
+    va_list ap;
+    va_start(ap, fmt);
+    vprintf(fmt,ap);
+    va_end(ap);
+}
 
+
+#else
 void show_msg(int level, char *fmt, ...) {
-	va_list ap;
+    va_list ap;
 	int saveerr;
 	extern char *progname;
-   char timestring[20];
+    char timestring[20];
    time_t timestamp;
 
    if ((loglevel == MSGNONE) || (level > loglevel))
@@ -128,8 +137,6 @@ void show_msg(int level, char *fmt, ...) {
       fprintf(logfile, "%s ", timestring);
    }
 
-   // fputs(progname, logfile);
-
    if (logstamp) {
       fprintf(logfile, "(%d)", getpid());
    }
@@ -149,4 +156,4 @@ void show_msg(int level, char *fmt, ...) {
 
 	va_end(ap);
 }
-
+#endif

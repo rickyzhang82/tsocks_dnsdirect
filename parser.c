@@ -31,6 +31,7 @@ static int handle_type(struct parsedfile *config, int, char *);
 static int handle_port(struct parsedfile *config, int, char *);
 static int handle_local(struct parsedfile *, int, char *);
 static int handle_tordns_enabled(struct parsedfile *, int, char *);
+static int handle_dns_direct_enabled(struct parsedfile *, int, char *);
 static int handle_tordns_deadpool_range(struct parsedfile *, int, char *);
 static int handle_tordns_cache_size(struct parsedfile *, int, char *);
 static int handle_defuser(struct parsedfile *, int, char *);
@@ -53,6 +54,9 @@ int read_config (char *filename, struct parsedfile *config) {
    /* Tordns defaults */
    config->tordns_cache_size = 256;
    config->tordns_enabled = 1;
+
+   /* Connect to socks proxy as DNS*/
+   config->dns_direct_enable = 0;
 
 	/* If a filename wasn't provided, use the default */
 	if (filename == NULL) {
@@ -169,6 +173,8 @@ static int handle_line(struct parsedfile *config, char *line, int lineno) {
 				handle_local(config, lineno, words[2]);
             } else if (!strcmp(words[0], "tordns_enable")) {
                 handle_tordns_enabled(config, lineno, words[2]);
+            } else if (!strcmp(words[0], "dns_direct_enable")) {
+                handle_dns_direct_enabled(config, lineno, words[2]);
             } else if (!strcmp(words[0], "tordns_deadpool_range")) {
                 handle_tordns_deadpool_range(config, lineno, words[2]);
             } else if (!strcmp(words[0], "tordns_cache_size")) {
@@ -465,6 +471,21 @@ static int handle_tordns_enabled(struct parsedfile *config, int lineno,
     return 0;
 }
 
+static int handle_dns_direct_enabled(struct parsedfile *config, int lineno,
+                           char *value)
+{
+    int val = handle_flag(value);
+    if(val == -1) {
+        show_msg(MSGERR, "Invalid value %s supplied for dns_direct_enable at "
+                 "line %d in config file, IGNORED\n", value, lineno);
+    } else {
+        config->dns_direct_enable= val;
+        /*over ride tordns if treat socks proxy as DNS*/
+        if(val == 1)
+            config->tordns_enabled = val;
+    }
+    return 0;
+}
 static int handle_tordns_cache_size(struct parsedfile *config, int lineno,
                            char *value)
 {

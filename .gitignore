@@ -10,3 +10,11 @@ config.log
 tsocks.in
 configure
 config.status
+*.o
+*.dsyM/
+inspectsocks
+saveme
+libtsocks.dylib
+libtsocks.dylib.1.8
+validateconf
+set_debug_var.sh

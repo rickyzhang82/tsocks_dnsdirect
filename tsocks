@@ -42,7 +42,7 @@ if [ $# = 0 ] ; then
    exit
 fi
 
-LIBDIR="/lib"
+LIBDIR="/Users/Ricky/repo/tsocks/tsocks-1.8.4"
 LIB_NAME="libtsocks"
 SHLIB_EXT="dylib"
 SHLIB="${LIBDIR}/${LIB_NAME}.${SHLIB_EXT}"

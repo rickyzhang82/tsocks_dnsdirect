@@ -8,6 +8,7 @@
 #include <sys/mman.h>
 #include "common.h"
 #include "dead_pool.h"
+#include <stdio.h>
 
 int store_pool_entry(dead_pool *pool, char *hostname, struct in_addr *addr);
 void get_next_dead_address(dead_pool *pool, uint32_t *result);
@@ -15,6 +16,10 @@ void get_next_dead_address(dead_pool *pool, uint32_t *result);
 static int
 do_resolve(const char *hostname, uint32_t sockshost, uint16_t socksport,
            uint32_t *result_addr);
+
+//resolve host name by sending DNS request to DNS
+static int
+do_resolve_over_dns(const char* hostname, uint32_t dnshost, uint16_t dnsport, uint32_t *result_addr);
 
 /* Compares the last strlen(s2) characters of s1 with s2.  Returns as for
    strcasecmp. */
@@ -30,7 +35,7 @@ strcasecmpend(const char *s1, const char *s2)
 
 dead_pool *
 init_pool(int pool_size, struct in_addr deadrange_base, 
-    struct in_addr deadrange_mask, char *sockshost, uint16_t socksport)
+    struct in_addr deadrange_mask, char *sockshost, uint16_t socksport, int dns_direct_enable)
 {
     int i, deadrange_bits, deadrange_width, deadrange_size;
     struct in_addr socks_server;
@@ -89,6 +94,7 @@ init_pool(int pool_size, struct in_addr deadrange_base,
     newpool->write_pos = 0;
     newpool->dead_pos = 0;
     newpool->n_entries = pool_size;
+    newpool->dns_direct_enable = dns_direct_enable;
 
     /* Allocate space for the entries */
     newpool->entries = (pool_ent *) mmap(0, newpool->n_entries * sizeof(pool_ent), 
@@ -136,7 +142,7 @@ store_pool_entry(dead_pool *pool, char *hostname, struct in_addr *addr)
   int position = pool->write_pos;
   int oldpos;
   int rc;
-  uint32_t intaddr;
+  uint32_t intaddr = 0;
 
   show_msg(MSGDEBUG, "store_pool_entry: storing '%s'\n", hostname);
   show_msg(MSGDEBUG, "store_pool_entry: write pos is: %d\n", pool->write_pos);
@@ -154,7 +160,17 @@ store_pool_entry(dead_pool *pool, char *hostname, struct in_addr *addr)
   if(strcasecmpend(hostname, ".onion") == 0) {
       get_next_dead_address(pool, &pool->entries[position].ip);
   } else {
-      rc = do_resolve(hostname, pool->sockshost, pool->socksport, &intaddr);
+
+      if(pool->dns_direct_enable){
+        /*Treat socks proxy as DNS*/
+          rc = do_resolve_over_dns(hostname, pool->sockshost, 53, &intaddr);
+
+          show_msg(MSGDEBUG, "Return do_resolve_over_dns (%x)\n", intaddr );
+
+      }else
+          rc = do_resolve(hostname, pool->sockshost, pool->socksport, &intaddr);
+
+
       if(rc != 0) {
           show_msg(MSGWARN, "failed to resolve: %s\n", hostname);
           return -1;
@@ -174,7 +190,7 @@ store_pool_entry(dead_pool *pool, char *hostname, struct in_addr *addr)
   }
   addr->s_addr = pool->entries[position].ip;
 
-  show_msg(MSGDEBUG, "store_pool_entry: stored entry in slot '%d'\n", position);
+  show_msg(MSGDEBUG, "store_pool_entry: stored entry in slot '%d' with ip '%x'\n", position, (addr->s_addr));
 
   return position;
 }
@@ -295,7 +311,7 @@ do_resolve(const char *hostname, uint32_t sockshost, uint16_t socksport,
     show_msg(MSGWARN, "do_resolve: error connecting to SOCKS server\n");
     return -1;
   }
-
+//BINGO
   if ((len = build_socks4a_resolve_request(&req, "", hostname))<0) {
     show_msg(MSGWARN, "do_resolve: error generating SOCKS request\n"); 
     return -1;
@@ -471,10 +487,12 @@ our_getaddrinfo(dead_pool *pool, const char *node, const char *service,
             return EAI_NONAME;
         } else {
             ipstr = strdup(inet_ntoa(addr));
+            show_msg(MSGDEBUG, "our_getaddrinfo: ipstr '%s'\n", ipstr);
             ret = realgetaddrinfo(ipstr, service, hints, res);
             free(ipstr);
         }
     } else {
+
         ret = realgetaddrinfo(node, service, hints, res);
     }
 
@@ -538,4 +556,159 @@ our_getipnodebyname(dead_pool *pool, const char *name, int af, int flags,
     return he;
 }
 
+int build_dns_request(char* buff, const char* hostname, ushort* dns_id, int* qname_len)
+{
+    int len = 0;
+    /*DNS request ID*/
+    ushort id = htons((ushort)(rand()% 0xffff));
+    *dns_id = id;
+    memcpy(buff + len, &id, sizeof(id));
+    len += sizeof(id);
+
+    /*Standard query*/
+    ushort std_query = htons(0x100);
+    memcpy(buff + len, &std_query, sizeof(std_query));
+    len += sizeof(std_query);
+
+    /*question count*/
+    ushort qdcount = htons(0x1);
+    memcpy(buff + len, &qdcount, sizeof(qdcount));
+    len += sizeof(qdcount);
+
+    /*answer count*/
+    ushort ancount = htons(0x0);
+    memcpy(buff + len, &ancount, sizeof(ancount));
+    len += sizeof(ancount);
+
+    /*nameserver count*/
+    ushort nscount = htons(0x0);
+    memcpy(buff + len, &nscount, sizeof(nscount));
+    len += sizeof(nscount);
+
+    /*resource record count*/
+    ushort arcount = htons(0x0);
+    memcpy(buff + len, &arcount, sizeof(arcount));
+    len += sizeof(arcount);
+
+    /*Convert hostname to QNAME*/
+    *qname_len = len;
+
+    char hostname_buff[256];
+    memset(hostname_buff,0,sizeof(hostname_buff));
+    strcpy(hostname_buff,hostname);
+    char* token;
+    const char sep[]=".";
+
+    token=strtok(hostname_buff,sep);
+
+
+    while(token != NULL){
+
+        *(buff + len) = (char) strlen(token);
+        len++;
+        memcpy(buff + len, token, strlen(token));
+        len = len + strlen(token);
+
+        token = strtok(NULL,sep);
+
+    }
+
+    *(buff + len)=0x0;
+    len++;
+
+    *qname_len = len - *qname_len;
+
+    /*qtype*/
+    ushort qtype = htons(0x1);
+    memcpy(buff + len, &qtype, sizeof(qtype));
+    len += sizeof(qtype);
+
+    /*qclass*/
+    ushort qclass = htons(0x1);
+    memcpy(buff + len, &qclass, sizeof(qclass));
+    len += sizeof(qclass);
+
+    return len;
+
+
+}
+
+int parse_dns_response(const char* buff, uint32_t *resultIP, ushort dns_req_id, int qname_len)
+{
+    /*check if DNS request ID match*/
+    if(memcmp(buff,&dns_req_id,sizeof(dns_req_id)) == 0){
+
+        ushort qdcount = 0;
+        ushort ancount = 0;
+        int offset = 4;
+        memcpy((void*)&qdcount, buff+ offset, sizeof(qdcount));
+        offset += 2;
+        memcpy((void*)&ancount, buff+ offset, sizeof(ancount));
+        //jump to question
+        offset = 12;
+        //jump to answer
+        offset = offset + qname_len + 4;
+        //check if use DNS packet compression
+        ushort compression_header;
+        memcpy(&compression_header, buff + offset, sizeof(compression_header));
+        compression_header=ntohs(compression_header);
+        if((compression_header & 0xc000) == 0xc000 ){
+            show_msg(MSGDEBUG,"It's compressed DNS header.\n");
+            //skip offset
+            offset += 2 ;
+            //skip type
+            offset += 2;
+            //skip class
+            offset += 2;
+            //skip TTL
+            offset += 4;
+            //skip address lenght
+            offset += 2;
+
+            memcpy(resultIP, buff + offset, sizeof(*resultIP));
+            show_msg(MSGDEBUG, "DNS returned host IPV4 address: (%x).\n",*resultIP);
+            return 0;
+        }else
+            //TODO handle DNS uncompressed header
+            return -1;
+
+    }else
+        return -1;
+}
+
+static int
+do_resolve_over_dns(const char* hostname, uint32_t dnshost, uint16_t dnsport, uint32_t *result_addr)
+{
+    struct sockaddr_in addr;
+    int sockfd;
+
+    char dns_request_buff[1024];
+    memset(dns_request_buff, 0, sizeof(dns_request_buff));
+    int lenReqMsg = 0, qname_len = 0;
+    char dns_response_buff[1024];
+    memset(dns_response_buff,0, sizeof(dns_response_buff));
+
+    sockfd = socket(AF_INET, SOCK_DGRAM,0);
+
+    if(sockfd<0){
+        show_msg(MSGWARN, "do_resolve_over_dns: failed to create socket\n");
+        return -1;
+    }
+
+    memset(&addr, 0, sizeof(addr));
+    addr.sin_family = AF_INET;
+    addr.sin_port = htons(dnsport);
+    addr.sin_addr.s_addr = htonl(dnshost);
+
+    ushort dns_req_id;
+    lenReqMsg=build_dns_request(dns_request_buff, hostname, &dns_req_id, &qname_len);
+    //TODO: naive send and recv.need to improve
+    sendto(sockfd,dns_request_buff, lenReqMsg, 0, (struct sockaddr*)&addr, sizeof(addr));
+    recvfrom(sockfd, dns_response_buff, sizeof(dns_response_buff),0, NULL, NULL);
+
+    show_msg(MSGDEBUG, "Close DNS udp socket fd (%d).\n", sockfd);
+
+    realclose(sockfd);
+    return parse_dns_response(dns_response_buff, result_addr, dns_req_id, qname_len);
+}
 

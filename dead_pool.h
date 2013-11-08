@@ -24,13 +24,13 @@ struct struct_dead_pool {
   unsigned int dead_pos;        /* Next 'unused' deadpool IP */
   uint32_t sockshost;     
   uint16_t socksport;
-  char pad[2];
+  uint16_t dns_direct_enable;
 };
 
 typedef struct struct_dead_pool dead_pool;
 
 dead_pool *init_pool(int deadpool_size, struct in_addr deadrange_base, 
-    struct in_addr deadrange_mask, char *sockshost, uint16_t socksport);
+    struct in_addr deadrange_mask, char *sockshost, uint16_t socksport, int dns_direct_enable);
 int is_dead_address(dead_pool *pool, uint32_t addr);
 char *get_pool_entry(dead_pool *pool, struct in_addr *addr);
 int search_pool_for_name(dead_pool *pool, const char *name);

@@ -37,6 +37,7 @@ struct parsedfile {
    int tordns_failopen;
    int tordns_cache_size;
    struct netent *tordns_deadpool_range;
+   int dns_direct_enable;
 };
 
 /* Functions provided by parser module */
