@@ -5,6 +5,9 @@ tsocks.files
 tsocks.includes
 Makefile
 autom4te.cache/
+configure
+config.status
+tsocks
 config.h
 config.log
 *.o

@@ -49,7 +49,7 @@ AC_PROG_LN_S
 dnl Check if the C compiler accepts -Wall
 AC_MSG_CHECKING(if the C compiler accepts -Wall)
 OLDCFLAGS="$CFLAGS"
-CFLAGS="$CFLAGS -Wall"
+CFLAGS="$CFLAGS -arch i386 -arch x86_64 -Wall"
 AC_TRY_COMPILE(,,AC_MSG_RESULT(yes),[
    CFLAGS="$OLDCFLAGS"
    AC_MSG_RESULT(no)])
