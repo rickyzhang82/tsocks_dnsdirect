@@ -84,7 +84,7 @@ AC_CHECK_FUNCS(strcspn strdup strerror strspn strtol mmap strcasecmp \
 
 dnl Find which version of gethostbyname_r we should be using (actually this
 dnl isn't used right now).
-AX_FUNC_WHICH_GETHOSTBYNAME_R
+dnl AX_FUNC_WHICH_GETHOSTBYNAME_R
 
 dnl First find the library that contains connect() (obviously
 dnl the most important library for us). Once we've found it

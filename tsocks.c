@@ -62,6 +62,7 @@ static int (*realresinit)(void);
 #ifdef USE_TOR_DNS
 static dead_pool *pool = NULL;
 static struct hostent *(*realgethostbyname)(GETHOSTBYNAME_SIGNATURE);
+struct hostent *(*realgethostbyname2)(GETHOSTBYNAME2_SIGNATURE);
 int (*realgetaddrinfo)(GETADDRINFO_SIGNATURE);
 static struct hostent *(*realgetipnodebyname)(GETIPNODEBYNAME_SIGNATURE);
 #endif
@@ -141,7 +142,8 @@ void _init(void) {
 	#endif
         #ifdef USE_TOR_DNS
 	realgethostbyname = dlsym(RTLD_NEXT, "gethostbyname");
-	realgetaddrinfo = dlsym(RTLD_NEXT, "getaddrinfo");
+    realgethostbyname2 = dlsym(RTLD_NEXT, "gethostbyname2");
+    realgetaddrinfo = dlsym(RTLD_NEXT, "getaddrinfo");
 	realgetipnodebyname = dlsym(RTLD_NEXT, "getipnodebyname");
         #endif
 #else
@@ -155,6 +157,7 @@ void _init(void) {
 	#endif
 	#ifdef USE_TOR_DNS
 	realgethostbyname = dlsym(lib, "gethostbyname");
+    realgethostbyname2 = dlsym(lib, "gethostbyname2");
 	realgetaddrinfo = dlsym(lib, "getaddrinfo");
 	realgetipnodebyname = dlsym(RTLD_NEXT, "getipnodebyname");
         #endif
@@ -1393,6 +1396,15 @@ struct hostent *gethostbyname(GETHOSTBYNAME_SIGNATURE)
   } else {
       return realgethostbyname(name);
   }  
+}
+
+struct hostent *gethostbyname2(GETHOSTBYNAME2_SIGNATURE)
+{
+  if(pool) {
+      return our_gethostbyname2(pool, name, af);
+  } else {
+      return realgethostbyname2(name, af);
+  }
 }
 
 int getaddrinfo(GETADDRINFO_SIGNATURE)

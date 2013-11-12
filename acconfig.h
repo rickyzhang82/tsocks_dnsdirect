@@ -78,6 +78,7 @@ in inspectsocks */
 
 /* Signatures for name resolution stuff */
 #undef GETHOSTBYNAME_SIGNATURE
+#undef GETHOSTBYNAME2_SIGNATURE
 #undef GETADDRINFO_SIGNATURE
 #undef GETIPNODEBYNAME_SIGNATURE
 

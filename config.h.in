@@ -79,6 +79,7 @@ in inspectsocks */
 
 /* Signatures for name resolution stuff */
 #undef GETHOSTBYNAME_SIGNATURE
+#undef GETHOSTBYNAME2_SIGNATURE
 #undef GETADDRINFO_SIGNATURE
 #undef GETIPNODEBYNAME_SIGNATURE
 
@@ -151,6 +152,9 @@ in inspectsocks */
 
 /* Define to the one symbol short name of this package. */
 #undef PACKAGE_TARNAME
+
+/* Define to the home page for this package. */
+#undef PACKAGE_URL
 
 /* Define to the version of this package. */
 #undef PACKAGE_VERSION

@@ -387,6 +387,41 @@ our_gethostbyname(dead_pool *pool, const char *name)
   return &he;
 }
 
+struct hostent *our_gethostbyname2(dead_pool *pool, const char *name, int af)
+{
+    //only resolve IPV4
+    if(af == AF_INET){
+        int pos;
+        static struct in_addr addr;
+        static struct hostent he;
+        static char *addrs[2];
+
+        show_msg(MSGDEBUG, "our_gethostbyname: '%s' requested\n", name);
+
+        pos = store_pool_entry(pool,(char *) name, &addr);
+        if(pos == -1) {
+            h_errno = HOST_NOT_FOUND;
+            return NULL;
+        }
+
+        addrs[0] = (char *)&addr;
+        addrs[1] = NULL;
+
+        he.h_name      = pool->entries[pos].name;
+        he.h_aliases   = NULL;
+        he.h_length    = 4;
+        he.h_addrtype  = AF_INET;
+        he.h_addr_list = addrs;
+
+        show_msg(MSGDEBUG, "our_gethostbyname: resolved '%s' to: '%s'\n",
+                 name, inet_ntoa(*((struct in_addr *)he.h_addr)));
+
+        return &he;
+    }else{
+        return realgethostbyname2(name, af);
+    }
+}
+
 static struct hostent *
 alloc_hostent(int af)
 {

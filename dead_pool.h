@@ -6,6 +6,7 @@
 extern int (*realconnect)(CONNECT_SIGNATURE);
 extern int (*realclose)(CLOSE_SIGNATURE);
 extern int (*realgetaddrinfo)(GETADDRINFO_SIGNATURE);
+extern struct hostent *(*realgethostbyname2)(GETHOSTBYNAME2_SIGNATURE);
 
 struct struct_pool_ent {
   unsigned int ip;
@@ -35,6 +36,7 @@ int is_dead_address(dead_pool *pool, uint32_t addr);
 char *get_pool_entry(dead_pool *pool, struct in_addr *addr);
 int search_pool_for_name(dead_pool *pool, const char *name);
 struct hostent *our_gethostbyname(dead_pool *pool, const char *name);
+struct hostent *our_gethostbyname2(dead_pool *pool, const char *name, int af);
 int our_getaddrinfo(dead_pool *pool, const char *node, const char *service, 
     void *hints, void *res);
 struct hostent *our_getipnodebyname(dead_pool *pool, const char *name, 
