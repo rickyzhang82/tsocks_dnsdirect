@@ -62,6 +62,7 @@ static int (*realresinit)(void);
 #ifdef USE_TOR_DNS
 static dead_pool *pool = NULL;
 static struct hostent *(*realgethostbyname)(GETHOSTBYNAME_SIGNATURE);
+static struct hostent *(*realgethostbyaddr)(GETHOSTBYADDR_SIGNATURE);
 int (*realgetaddrinfo)(GETADDRINFO_SIGNATURE);
 static struct hostent *(*realgetipnodebyname)(GETIPNODEBYNAME_SIGNATURE);
 #endif
@@ -87,6 +88,7 @@ int res_init(void);
 #endif
 #ifdef USE_TOR_DNS
 struct hostent *gethostbyname(GETHOSTBYNAME_SIGNATURE);
+struct hostent *gethostbyaddr(GETHOSTBYADDR_SIGNATURE);
 int getaddrinfo(GETADDRINFO_SIGNATURE);
 struct hostent *getipnodebyname(GETIPNODEBYNAME_SIGNATURE);
 #endif 
@@ -141,6 +143,7 @@ void _init(void) {
 	#endif
         #ifdef USE_TOR_DNS
 	realgethostbyname = dlsym(RTLD_NEXT, "gethostbyname");
+   realgethostbyaddr = dlsym(RTLD_NEXT, "gethostbyaddr");
 	realgetaddrinfo = dlsym(RTLD_NEXT, "getaddrinfo");
 	realgetipnodebyname = dlsym(RTLD_NEXT, "getipnodebyname");
         #endif
@@ -155,6 +158,7 @@ void _init(void) {
 	#endif
 	#ifdef USE_TOR_DNS
 	realgethostbyname = dlsym(lib, "gethostbyname");
+   realgethostbyaddr = dlsym(lib, "gethostbyaddr");
 	realgetaddrinfo = dlsym(lib, "getaddrinfo");
 	realgetipnodebyname = dlsym(RTLD_NEXT, "getipnodebyname");
         #endif
@@ -1377,11 +1381,15 @@ static int deadpool_init()
 
 struct hostent *gethostbyname(GETHOSTBYNAME_SIGNATURE)
 {
-  if(pool) {
-      return our_gethostbyname(pool, name);
-  } else {
-      return realgethostbyname(name);
-  }  
+  show_msg(MSGDEBUG,"Invoke gethostbyname -- name(%s)", name);
+  return realgethostbyname(name);
+}
+
+struct hostent *gethostbyaddr(GETHOSTBYADDR_SIGNATURE)
+{
+  /*const void *addr, socklen_t len, int type*/
+  show_msg(MSGDEBUG,"Invoke gethostbyaddr -- name (%s), len (%d), type(%d)", inet_ntoa(*((struct in_addr *)addr)), len, type);
+  return realgethostbyaddr(addr, len, type);
 }
 
 int getaddrinfo(GETADDRINFO_SIGNATURE)
