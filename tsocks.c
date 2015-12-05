@@ -170,7 +170,7 @@ void _init(void) {
 #ifdef USE_TOR_DNS
      /* Unfortunately, we can't do this lazily because otherwise our mmap'd
         area won't be shared across fork()s. */
-     deadpool_init();
+     //deadpool_init();
 #endif
 
 }
@@ -226,6 +226,7 @@ static int get_config () {
 }
 
 int connect(CONNECT_SIGNATURE) {
+    return realconnect(__fd, __addr, __len);
 	struct sockaddr_in *connaddr;
 	struct sockaddr_in peer_address;
 	struct sockaddr_in server_address;
@@ -382,6 +383,7 @@ int connect(CONNECT_SIGNATURE) {
 }
 
 int select(SELECT_SIGNATURE) {
+    return realselect(n, readfds, writefds, exceptfds, timeout);
    int nevents = 0;
    int rc = 0;
    int setevents = 0;
@@ -567,6 +569,7 @@ int select(SELECT_SIGNATURE) {
 }
 
 int poll(POLL_SIGNATURE) {
+    return realpoll(ufds, nfds, timeout);
    int nevents = 0;
    int rc = 0, i;
    int setevents = 0;
@@ -724,6 +727,7 @@ int poll(POLL_SIGNATURE) {
 }
 
 int close(CLOSE_SIGNATURE) {
+   return realclose(fd);
    int rc;
    struct connreq *conn;
 
@@ -764,6 +768,7 @@ int close(CLOSE_SIGNATURE) {
  * PP, Sat, 27 Mar 2004 11:30:23 +0100
  */
 int getpeername(GETPEERNAME_SIGNATURE) {
+    return realgetpeername(__fd, __name, __namelen);
    struct connreq *conn;
    int rc;
 
@@ -1394,20 +1399,12 @@ struct hostent *gethostbyaddr(GETHOSTBYADDR_SIGNATURE)
 
 int getaddrinfo(GETADDRINFO_SIGNATURE)
 {
-  if(pool) {
-      return our_getaddrinfo(pool, node, service, hints, res);
-  } else {
       return realgetaddrinfo(node, service, hints, res);
-  }
 }
 
 struct hostent *getipnodebyname(GETIPNODEBYNAME_SIGNATURE)
 {
-  if(pool) {
-      return our_getipnodebyname(pool, name, af, flags, error_num);
-  } else {
       return realgetipnodebyname(name, af, flags, error_num);
-  }
 }
 
 #endif 
