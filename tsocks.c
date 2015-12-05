@@ -227,6 +227,8 @@ static int get_config () {
 }
 
 int connect(CONNECT_SIGNATURE) {
+    get_environment();
+    show_msg(MSGDEBUG, "Invoke connect -- addr(%s)\n", inet_ntoa(((struct sockaddr_in*)__addr)->sin_addr));
     return realconnect(__fd, __addr, __len);
 	struct sockaddr_in *connaddr;
 	struct sockaddr_in peer_address;
