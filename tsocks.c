@@ -171,6 +171,7 @@ void _init(void) {
      /* Unfortunately, we can't do this lazily because otherwise our mmap'd
         area won't be shared across fork()s. */
      //deadpool_init();
+    get_environment();
 #endif
 
 }
@@ -1386,14 +1387,14 @@ static int deadpool_init()
 
 struct hostent *gethostbyname(GETHOSTBYNAME_SIGNATURE)
 {
-  show_msg(MSGDEBUG,"Invoke gethostbyname -- name(%s)", name);
+  show_msg(MSGDEBUG,"Invoke gethostbyname -- name(%s)\n", name);
   return realgethostbyname(name);
 }
 
 struct hostent *gethostbyaddr(GETHOSTBYADDR_SIGNATURE)
 {
   /*const void *addr, socklen_t len, int type*/
-  show_msg(MSGDEBUG,"Invoke gethostbyaddr -- name (%s), len (%d), type(%d)", inet_ntoa(*((struct in_addr *)addr)), len, type);
+  show_msg(MSGDEBUG,"Invoke gethostbyaddr -- name (%s), len (%d), type(%d)\n", inet_ntoa(*((struct in_addr *)addr)), len, type);
   return realgethostbyaddr(addr, len, type);
 }
 
