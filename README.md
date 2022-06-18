@@ -25,12 +25,27 @@ run build.sh, assuming you can sudo
 
 2.Configuration
 
-In /etc/tsocks.conf,
-```Python
+In /etc/tsocks.conf, fill in your iPhone IP socks 5 server IP, port and socks version and set the DNS flags to true.
+
+```
+# This is the configuration for libtsocks (transparent socks)
+# Lines beginning with # and blank lines are ignored
+#
+# This sample configuration shows the simplest (and most common) use of
+# tsocks. This is a basic LAN, this machine can access anything on the
+# local ethernet (192.168.0.*) but anything else has to use the SOCKS version
+# 4 server on the firewall. Further details can be found in the man pages,
+# tsocks(8) and tsocks.conf(5) and a more complex example is presented in
+# tsocks.conf.complex.example
+
+# We can access 192.168.0.* directly
+local = 192.168.100.0/255.255.255.0
+
+# Otherwise we use the server
+server = 192.168.100.2
+server_type = 5
+server_port = 3128
 tordns_enable = true
 dns_direct_enable = true
-server = ...your iPhone local wifi IP...
 ```
-3.Disable SIP feature in Mac OS X.
 
-You can't sockify ssh without disable SIP feature. Google it how.
